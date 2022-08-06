@@ -12,5 +12,5 @@ jobs:
       uses: golangci/golangci-lint-action@v3
       with:
         version: v1.48.0
-        working-directory: ./source
+        working-directory: ./app
         args: --config .golangci.yaml
