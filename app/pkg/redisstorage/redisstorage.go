@@ -2,11 +2,10 @@ package redisstorage
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/pkg/errors"
 )
 
 type RedisStorage struct {
@@ -28,7 +27,7 @@ func (r *RedisStorage) Add(ctx context.Context, name string, score float64) erro
 	txf := func(tx *redis.Tx) error {
 		exists, err := tx.Exists(ctx, name).Result()
 		if err != nil {
-			return fmt.Errorf("tx.Exists: %w", err)
+			return errors.Wrap(err, "tx.Exists:")
 		}
 		if exists != 0 {
 			return errors.New("user already exists")
@@ -38,15 +37,15 @@ func (r *RedisStorage) Add(ctx context.Context, name string, score float64) erro
 			pipe.ZAdd(ctx, r.zsetKey, &redis.Z{Score: score, Member: name})
 			return nil
 		})
-		return fmt.Errorf("txf: %w", err)
+		return errors.Wrap(err, "txf:")
 	}
 
-	return fmt.Errorf("redis watch: %w", r.client.Watch(ctx, txf, r.zsetKey))
+	return errors.Wrap(r.client.Watch(ctx, txf, r.zsetKey), "redis watch:")
 }
 
 func (r *RedisStorage) Count(ctx context.Context) (int64, error) {
 	count, err := r.client.ZCount(ctx, r.zsetKey, "-inf", "+inf").Result()
-	return count, fmt.Errorf("ZCount: %w", err)
+	return count, errors.Wrap(err, "ZCount:")
 }
 
 func (r *RedisStorage) Get(ctx context.Context, name string) (int64, float64, error) {
@@ -54,16 +53,16 @@ func (r *RedisStorage) Get(ctx context.Context, name string) (int64, float64, er
 	scoreCmd := pipe.ZScore(ctx, r.zsetKey, name)
 	rankCmd := pipe.ZRank(ctx, r.zsetKey, name)
 	if _, err := pipe.Exec(ctx); err != nil {
-		return -1, 0.0, fmt.Errorf("pipe.Exec: %w", err)
+		return -1, 0.0, errors.Wrap(err, "pipe.Exec:")
 	}
 	score, err := scoreCmd.Result()
 	if err != nil {
-		return -1, 0.0, fmt.Errorf("scoreCmd.Result: %w", err)
+		return -1, 0.0, errors.Wrap(err, "scoreCmd.Result:")
 	}
 
 	rank, err := rankCmd.Result()
 	if err != nil {
-		return -1, 0.0, fmt.Errorf("rankCmd.Result: %w", err)
+		return -1, 0.0, errors.Wrap(err, "rankCmd.Result:")
 	}
 
 	return rank, score, nil

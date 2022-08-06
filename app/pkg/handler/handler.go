@@ -2,13 +2,12 @@ package handler
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 type Handler struct {
@@ -30,7 +29,7 @@ type messageData struct {
 }
 
 func responseJSON(c echo.Context, statusCode int, data interface{}) error {
-	return fmt.Errorf("c.JSON: %w", c.JSON(statusCode, data))
+	return errors.Wrap(c.JSON(statusCode, data), "c.JSON:")
 }
 
 func errorJSON(c echo.Context, err error) error {
