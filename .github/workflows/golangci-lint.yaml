@@ -1,7 +1,7 @@
-name: github-ci
+name: golangci-lint
 on: [push, pull_request]
 jobs:
-  lint-build-test:
+  golangci-lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -14,11 +14,3 @@ jobs:
         version: v1.48.0
         working-directory: ./source
         args: --config .golangci.yaml
-
-    - name: build
-      working-directory: ./source
-      run: go build -v ./...
-
-    - name: test
-      working-directory: ./source
-      run: go test -v ./...
