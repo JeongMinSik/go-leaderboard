@@ -2,6 +2,7 @@ package leaderboard
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/redisstorage"
 )
@@ -23,21 +24,46 @@ func New() *LeaderBoard {
 }
 
 func (lb *LeaderBoard) UserCount(ctx context.Context) (int64, error) {
-	return lb.redisStorage.Count(ctx)
+	count, err := lb.redisStorage.Count(ctx)
+	return count, fmt.Errorf("lb.redisStorage.Count: %w", err)
 }
 
 func (lb *LeaderBoard) AddUser(ctx context.Context, name string, score float64) error {
-	return lb.redisStorage.Add(ctx, name, score)
+	return fmt.Errorf("lb.redisStorage.Add: %w", lb.redisStorage.Add(ctx, name, score))
 }
 
 func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (User, error) {
 	rank, score, err := lb.redisStorage.Get(ctx, name)
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("lb.redisStorage.Get: %w", err)
 	}
 	return User{
 		Name:  name,
 		Score: score,
 		Rank:  rank,
 	}, nil
+}
+
+func ErrorWithStatusCode(err error, statusCode int) error {
+	return Error{
+		origin:     err,
+		statusCode: statusCode,
+	}
+}
+
+type Error struct {
+	origin     error
+	statusCode int
+}
+
+func (e Error) Error() string {
+	return e.origin.Error()
+}
+
+func (e Error) Unwrap() error {
+	return e.origin
+}
+
+func (e Error) StatusCode() int {
+	return e.statusCode
 }

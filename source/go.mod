@@ -1,6 +1,6 @@
 module github.com/JeongMinSik/go-leaderboard
 
-go 1.19
+go 1.18
 
 require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
