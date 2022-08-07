@@ -25,17 +25,17 @@ func New() *LeaderBoard {
 
 func (lb *LeaderBoard) UserCount(ctx context.Context) (int64, error) {
 	count, err := lb.redisStorage.Count(ctx)
-	return count, errors.Wrap(err, "lb.redisStorage.Count:")
+	return count, errors.Wrap(err, "lb.redisStorage.Count")
 }
 
 func (lb *LeaderBoard) AddUser(ctx context.Context, name string, score float64) error {
-	return errors.Wrap(lb.redisStorage.Add(ctx, name, score), "lb.redisStorage.Add:")
+	return errors.Wrap(lb.redisStorage.Add(ctx, name, score), "lb.redisStorage.Add")
 }
 
 func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (User, error) {
 	rank, score, err := lb.redisStorage.Get(ctx, name)
 	if err != nil {
-		return User{}, errors.Wrap(err, "lb.redisStorage.Get:")
+		return User{}, errors.Wrap(err, "lb.redisStorage.Get")
 	}
 	return User{
 		Name:  name,

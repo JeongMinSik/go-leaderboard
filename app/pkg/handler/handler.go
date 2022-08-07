@@ -29,7 +29,7 @@ type messageData struct {
 }
 
 func responseJSON(c echo.Context, statusCode int, data interface{}) error {
-	return errors.Wrap(c.JSON(statusCode, data), "c.JSON:")
+	return errors.Wrap(c.JSON(statusCode, data), "c.JSON")
 }
 
 func errorJSON(c echo.Context, err error) error {
