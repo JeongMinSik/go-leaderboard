@@ -70,7 +70,10 @@ func (h *Handler) GetUserCount(c echo.Context) error {
 
 func (h *Handler) GetUser(c echo.Context) error {
 	ctx := context.Background()
-	userName := c.Param("name")
+	userName := c.QueryParam("name")
+	if userName == "" {
+		return responseJSON(c, http.StatusBadRequest, messageData{"user name is empty"})
+	}
 	user, err := h.leaderboard.GetUser(ctx, userName)
 	if err != nil {
 		return errorJSON(c, err)
@@ -80,7 +83,10 @@ func (h *Handler) GetUser(c echo.Context) error {
 
 func (h *Handler) AddUser(c echo.Context) error {
 	ctx := context.Background()
-	userName := c.Param("name")
+	userName := c.QueryParam("name")
+	if userName == "" {
+		return responseJSON(c, http.StatusBadRequest, messageData{"user name is empty"})
+	}
 	score, err := strconv.ParseFloat(c.QueryParam("score"), 64)
 	if err != nil {
 		return responseJSON(c, http.StatusBadRequest, messageData{"score is empty or invalid format"})
