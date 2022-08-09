@@ -1,0 +1,48 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "go언어로 만든 리더보드 api 토이프로젝트입니다.",
+        "title": "Leaderboard API",
+        "contact": {
+            "name": "JeongMinSik",
+            "url": "https://github.com/JeongMinSik/go-leaderboard",
+            "email": "jms6025a@naver.com"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:6025",
+    "paths": {
+        "/": {
+            "get": {
+                "description": "테스트용",
+                "tags": [
+                    "test"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hello go-leaderboard",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/teapot": {
+            "get": {
+                "description": "테스트용",
+                "tags": [
+                    "test"
+                ],
+                "responses": {
+                    "418": {
+                        "description": "I'm a teapot",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

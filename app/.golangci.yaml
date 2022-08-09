@@ -14,8 +14,6 @@ output:
   uniq-by-line: true
   sort-results: true
 linters-settings:
-  godot:
-    scope: all
   gofmt:
     simplify: false
   revive:
@@ -138,7 +136,6 @@ linters:
     - exportloopref # checks for pointers to enclosing loop variables
     - goconst # finds repeated strings that could be replaced by a constant
     - gocritic # provides diagnostics that check for bugs, performance and style issues
-    - godot # check if comments end in a period
     - gofmt # checks whether code was gofmt-ed
     - goimports # fix imports, formats your code in the same style as gofmt
     - misspell # finds commonly misspelled English words in comments

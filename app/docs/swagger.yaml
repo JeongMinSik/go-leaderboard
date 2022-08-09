@@ -1,0 +1,31 @@
+host: localhost:6025
+info:
+  contact:
+    email: jms6025a@naver.com
+    name: JeongMinSik
+    url: https://github.com/JeongMinSik/go-leaderboard
+  description: go언어로 만든 리더보드 api 토이프로젝트입니다.
+  title: Leaderboard API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: 테스트용
+      responses:
+        "200":
+          description: Hello go-leaderboard
+          schema:
+            type: string
+      tags:
+      - test
+  /teapot:
+    get:
+      description: 테스트용
+      responses:
+        "418":
+          description: I'm a teapot
+          schema:
+            type: string
+      tags:
+      - test
+swagger: "2.0"

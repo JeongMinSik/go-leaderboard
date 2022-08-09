@@ -8,6 +8,7 @@ import (
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 type Handler struct {
@@ -22,6 +23,8 @@ func Setup(e *echo.Echo) {
 	e.GET("/users/count", handler.GetUserCount)
 	e.GET("/users", handler.GetUser)
 	e.POST("/users", handler.AddUser)
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 }
 
 type messageData struct {
@@ -46,10 +49,18 @@ func errorJSON(c echo.Context, err error) error {
 	return responseJSON(c, statusCode, messageData{err.Error()})
 }
 
+// @Description 테스트용
+// @Tags        test
+// @Success     200 {string} string "Hello go-leaderboard"
+// @Router      / [get]
 func (h *Handler) Hello(c echo.Context) error {
 	return responseJSON(c, http.StatusOK, "Hello go-leaderboard")
 }
 
+// @Description 테스트용
+// @Tags        test
+// @failure     418 {string} string "I'm a teapot"
+// @Router      /teapot [get]
 func (h *Handler) Teapot(c echo.Context) error {
 	return responseJSON(c, http.StatusTeapot, "I'm a teapot")
 }
