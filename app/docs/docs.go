@@ -75,11 +75,11 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/leaderboard.User"
+                            "$ref": "#/definitions/leaderboard.UserRank"
                         }
                     },
                     "400": {
-                        "description": "name param 확인 필요",
+                        "description": "name query param 확인 필요",
                         "schema": {
                             "$ref": "#/definitions/handler.messageData"
                         }
@@ -94,6 +94,9 @@ const docTemplate = `{
             },
             "post": {
                 "description": "신규 user를 추가합니다.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -103,16 +106,50 @@ const docTemplate = `{
                 "summary": "Add a user",
                 "parameters": [
                     {
+                        "description": "User info",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/leaderboard.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/leaderboard.UserRank"
+                        }
+                    },
+                    "400": {
+                        "description": "request body 확인 필요",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "기존 user를 삭제합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete a user",
+                "parameters": [
+                    {
                         "type": "string",
                         "description": "User name",
                         "name": "name",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "number",
-                        "description": "User score",
-                        "name": "score",
                         "in": "query",
                         "required": true
                     }
@@ -121,11 +158,11 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/leaderboard.User"
+                            "$ref": "#/definitions/handler.deleteData"
                         }
                     },
                     "400": {
-                        "description": "name 또는 score param 확인 필요",
+                        "description": "name 확인 필요",
                         "schema": {
                             "$ref": "#/definitions/handler.messageData"
                         }
@@ -156,12 +193,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/handler.userCountData"
                         }
                     },
-                    "400": {
-                        "description": "name 또는 score param 확인 필요",
-                        "schema": {
-                            "$ref": "#/definitions/handler.messageData"
-                        }
-                    },
                     "500": {
                         "description": "서버에러",
                         "schema": {
@@ -173,6 +204,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handler.deleteData": {
+            "type": "object",
+            "properties": {
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "handler.messageData": {
             "type": "object",
             "properties": {
@@ -190,6 +232,17 @@ const docTemplate = `{
             }
         },
         "leaderboard.User": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
+        "leaderboard.UserRank": {
             "type": "object",
             "properties": {
                 "name": {

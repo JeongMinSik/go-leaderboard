@@ -67,3 +67,8 @@ func (r *RedisStorage) Get(ctx context.Context, name string) (int64, float64, er
 
 	return rank, score, nil
 }
+
+func (r *RedisStorage) Delete(ctx context.Context, name string) (bool, error) {
+	rem_n, err := r.client.ZRem(ctx, r.zsetKey, name).Result()
+	return rem_n == 1, errors.Wrap(err, "ZRem")
+}

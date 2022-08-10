@@ -2,8 +2,8 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
@@ -23,6 +23,7 @@ func Setup(e *echo.Echo) {
 	e.GET("/users/count", handler.GetUserCount)
 	e.GET("/users", handler.GetUser)
 	e.POST("/users", handler.AddUser)
+	e.DELETE("/users", handler.DeleteUser)
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 }
@@ -33,6 +34,11 @@ type messageData struct {
 
 type userCountData struct {
 	Count int64 `json:"count"`
+}
+
+type deleteData struct {
+	Name      string `json:"name"`
+	IsDeleted bool   `json:"is_deleted"`
 }
 
 func responseJSON(c echo.Context, statusCode int, data interface{}) error {
@@ -72,7 +78,6 @@ func (h *Handler) Teapot(c echo.Context) error {
 // @Tags         Users
 // @Produce      json
 // @Success      200  {object}  userCountData
-// @Failure      400  {object}  messageData "name 또는 score param 확인 필요"
 // @Failure      500  {object}  messageData "서버에러"
 // @Router       /users/count [get]
 func (h *Handler) GetUserCount(c echo.Context) error {
@@ -89,8 +94,8 @@ func (h *Handler) GetUserCount(c echo.Context) error {
 // @Tags         Users
 // @Produce      json
 // @Param        name   query   string  true  "User name"
-// @Success      200  {object}  leaderboard.User
-// @Failure      400  {object}  messageData "name param 확인 필요"
+// @Success      200  {object}  leaderboard.UserRank
+// @Failure      400  {object}  messageData "name query param 확인 필요"
 // @Failure      500  {object}  messageData "서버에러"
 // @Router       /users [get]
 func (h *Handler) GetUser(c echo.Context) error {
@@ -107,31 +112,52 @@ func (h *Handler) GetUser(c echo.Context) error {
 }
 
 // @Summary      Add a user
-// @Description  신규 user를 추가합니다.
+// @Description  신규 user를 추가합니다. 이미 존재하면 업
 // @Tags         Users
+// @accept		 json
 // @Produce      json
-// @Param        name   query   string  true  "User name"
-// @Param        score  query   number  true  "User score"
-// @Success      200  {object}  leaderboard.User
-// @Failure      400  {object}  messageData "name 또는 score param 확인 필요"
+// @Param        user   body    leaderboard.User  true  "New User"
+// @Success      200  {object}  leaderboard.UserRank
+// @Failure      400  {object}  messageData "request body 확인 필요"
 // @Failure      500  {object}  messageData "서버에러"
 // @Router       /users [post]
 func (h *Handler) AddUser(c echo.Context) error {
+	ctx := context.Background()
+	user := leaderboard.User{}
+	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info"})
+	}
+	if err := h.leaderboard.AddUser(ctx, user); err != nil {
+		return errorJSON(c, err)
+	}
+	userRank, err := h.leaderboard.GetUser(ctx, user.Name)
+	if err != nil {
+		return errorJSON(c, err)
+	}
+	return responseJSON(c, http.StatusOK, userRank)
+}
+
+// @Summary      Delete a user
+// @Description  기존 user를 삭제합니다.
+// @Tags         Users
+// @Produce      json
+// @Param        name   query   string  true  "User name"
+// @Success      200  {object}  deleteData
+// @Failure      400  {object}  messageData "name 확인 필요"
+// @Failure      500  {object}  messageData "서버에러"
+// @Router       /users [delete]
+func (h *Handler) DeleteUser(c echo.Context) error {
 	ctx := context.Background()
 	userName := c.QueryParam("name")
 	if userName == "" {
 		return responseJSON(c, http.StatusBadRequest, messageData{"user name is empty"})
 	}
-	score, err := strconv.ParseFloat(c.QueryParam("score"), 64)
-	if err != nil {
-		return responseJSON(c, http.StatusBadRequest, messageData{"score is empty or invalid format"})
-	}
-	if err := h.leaderboard.AddUser(ctx, userName, score); err != nil {
-		return errorJSON(c, err)
-	}
-	user, err := h.leaderboard.GetUser(ctx, userName)
+	ok, err := h.leaderboard.DeleteUser(ctx, userName)
 	if err != nil {
 		return errorJSON(c, err)
 	}
-	return responseJSON(c, http.StatusOK, user)
+	return responseJSON(c, http.StatusOK, deleteData{
+		Name:      userName,
+		IsDeleted: ok,
+	})
 }

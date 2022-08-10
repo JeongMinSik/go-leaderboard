@@ -14,7 +14,11 @@ type LeaderBoard struct {
 type User struct {
 	Name  string  `json:"name"`
 	Score float64 `json:"score"`
-	Rank  int64   `json:"rank"`
+}
+
+type UserRank struct {
+	User
+	Rank int64 `json:"rank"`
 }
 
 func New() *LeaderBoard {
@@ -28,20 +32,27 @@ func (lb *LeaderBoard) UserCount(ctx context.Context) (int64, error) {
 	return count, errors.Wrap(err, "lb.redisStorage.Count")
 }
 
-func (lb *LeaderBoard) AddUser(ctx context.Context, name string, score float64) error {
-	return errors.Wrap(lb.redisStorage.Add(ctx, name, score), "lb.redisStorage.Add")
+func (lb *LeaderBoard) AddUser(ctx context.Context, user User) error {
+	return errors.Wrap(lb.redisStorage.Add(ctx, user.Name, user.Score), "lb.redisStorage.Add")
 }
 
-func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (User, error) {
+func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (UserRank, error) {
 	rank, score, err := lb.redisStorage.Get(ctx, name)
 	if err != nil {
-		return User{}, errors.Wrap(err, "lb.redisStorage.Get")
+		return UserRank{}, errors.Wrap(err, "lb.redisStorage.Get")
 	}
-	return User{
-		Name:  name,
-		Score: score,
-		Rank:  rank,
+	return UserRank{
+		User: User{
+			Name:  name,
+			Score: score,
+		},
+		Rank: rank,
 	}, nil
+}
+
+func (lb *LeaderBoard) DeleteUser(ctx context.Context, name string) (bool, error) {
+	ok, err := lb.redisStorage.Delete(ctx, name)
+	return ok, errors.Wrap(err, "lb.redisStorage.Delete")
 }
 
 func ErrorWithStatusCode(err error, statusCode int) error {
