@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
@@ -25,6 +26,7 @@ func Setup(e *echo.Echo) {
 	e.POST("/users", handler.AddUser)
 	e.DELETE("/users", handler.DeleteUser)
 	e.PATCH("/users", handler.UpdateUser)
+	e.GET("/users/:start/to/:stop", handler.GetUserList)
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 }
@@ -39,7 +41,7 @@ type userCountData struct {
 
 type deleteData struct {
 	Name      string `json:"name"`
-	IsDeleted bool   `json:"is_deleted`
+	IsDeleted bool   `json:"is_deleted"`
 }
 
 func responseJSON(c echo.Context, statusCode int, data interface{}) error {
@@ -126,7 +128,7 @@ func (h *Handler) AddUser(c echo.Context) error {
 	ctx := context.Background()
 	user := leaderboard.User{}
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
-		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info"})
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info: " + err.Error()})
 	}
 	if err := h.leaderboard.AddUser(ctx, user); err != nil {
 		return errorJSON(c, err)
@@ -166,6 +168,7 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 // @Summary      Update a user
 // @Description  기존 user를 수정합니다.
 // @Tags         Users
+// @accept		 json
 // @Produce      json
 // @Param        user   body    leaderboard.User  true  "Updated User"
 // @Success      200  {object}  leaderboard.UserRank
@@ -186,4 +189,32 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 		return errorJSON(c, err)
 	}
 	return responseJSON(c, http.StatusOK, userRank)
+}
+
+// @Summary      Get user list
+// @Description  user list 를 받아옵니다.
+// @Tags         Users
+// @Produce      json
+// @Param        start   path    int  true  "start index"
+// @Param        stop    path    int  true  "stop index"
+// @Success      200  {array}  leaderboard.UserRank
+// @Failure      400  {object}  messageData "param 확인 필요"
+// @Failure      500  {object}  messageData "서버에러"
+// @Router       /users/:start/to/:stop [get]
+func (h *Handler) GetUserList(c echo.Context) error {
+	ctx := context.Background()
+	start, err := strconv.ParseInt(c.Param("start"), 0, 64)
+	if err != nil {
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid start index: " + err.Error()})
+	}
+	stop, err := strconv.ParseInt(c.Param("stop"), 0, 64)
+	if err != nil {
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid stop index: " + err.Error()})
+	}
+
+	userList, err := h.leaderboard.GetUserList(ctx, start, stop)
+	if err != nil {
+		return errorJSON(c, err)
+	}
+	return responseJSON(c, http.StatusOK, userList)
 }

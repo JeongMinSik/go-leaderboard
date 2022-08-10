@@ -116,6 +116,8 @@ paths:
       tags:
       - Users
     patch:
+      consumes:
+      - application/json
       description: 기존 user를 수정합니다.
       parameters:
       - description: Updated User
@@ -169,6 +171,40 @@ paths:
           schema:
             $ref: '#/definitions/handler.messageData'
       summary: Add a user
+      tags:
+      - Users
+  /users/:start/to/:stop:
+    get:
+      description: user list 를 받아옵니다.
+      parameters:
+      - description: start index
+        in: path
+        name: start
+        required: true
+        type: integer
+      - description: stop index
+        in: path
+        name: stop
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/leaderboard.UserRank'
+            type: array
+        "400":
+          description: param 확인 필요
+          schema:
+            $ref: '#/definitions/handler.messageData'
+        "500":
+          description: 서버에러
+          schema:
+            $ref: '#/definitions/handler.messageData'
+      summary: Get user list
       tags:
       - Users
   /users/count:

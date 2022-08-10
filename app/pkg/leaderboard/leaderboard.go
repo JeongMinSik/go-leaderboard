@@ -59,6 +59,21 @@ func (lb *LeaderBoard) UpdateUser(ctx context.Context, user User) error {
 	return errors.Wrap(lb.redisStorage.Update(ctx, user.Name, user.Score), "lb.redisStorage.Update")
 }
 
+func (lb *LeaderBoard) GetUserList(ctx context.Context, start int64, stop int64) ([]User, error) {
+	userList, err := lb.redisStorage.Range(ctx, start, stop)
+	if err != nil {
+		return nil, errors.Wrap(err, "lb.redisStorage.Range")
+	}
+	result := make([]User, 0, len(userList))
+	for _, user := range userList {
+		result = append(result, User{
+			Name:  user.Member.(string),
+			Score: user.Score,
+		})
+	}
+	return result, nil
+}
+
 func ErrorWithStatusCode(err error, statusCode int) error {
 	return Error{
 		origin:     err,

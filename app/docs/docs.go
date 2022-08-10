@@ -177,6 +177,9 @@ const docTemplate = `{
             },
             "patch": {
                 "description": "기존 user를 수정합니다.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -204,6 +207,57 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "request body 확인 필요",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/:start/to/:stop": {
+            "get": {
+                "description": "user list 를 받아옵니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user list",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "start index",
+                        "name": "start",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "stop index",
+                        "name": "stop",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/leaderboard.UserRank"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "param 확인 필요",
                         "schema": {
                             "$ref": "#/definitions/handler.messageData"
                         }

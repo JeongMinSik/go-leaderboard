@@ -74,3 +74,12 @@ func (r *RedisStorage) Update(ctx context.Context, name string, score float64) e
 	}
 	return nil
 }
+
+func (r *RedisStorage) Range(ctx context.Context, start int64, stop int64) ([]redis.Z, error) {
+	userList, err := r.client.ZRangeWithScores(ctx, r.zsetKey, start, stop).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "r.client.ZRange")
+	}
+
+	return userList, nil
+}
