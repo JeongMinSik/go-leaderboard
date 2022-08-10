@@ -24,23 +24,14 @@ func New() *RedisStorage {
 }
 
 func (r *RedisStorage) Add(ctx context.Context, name string, score float64) error {
-	txf := func(tx *redis.Tx) error {
-		exists, err := tx.Exists(ctx, name).Result()
-		if err != nil {
-			return errors.Wrap(err, "tx.Exists")
-		}
-		if exists != 0 {
-			return errors.New("user already exists")
-		}
-
-		_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-			pipe.ZAdd(ctx, r.zsetKey, &redis.Z{Score: score, Member: name})
-			return nil
-		})
-		return errors.Wrap(err, "txf")
+	addCount, err := r.client.ZAddNX(ctx, r.zsetKey, &redis.Z{Score: score, Member: name}).Result()
+	if err != nil {
+		return errors.Wrap(err, "r.client.ZAddNX")
 	}
-
-	return errors.Wrap(r.client.Watch(ctx, txf, r.zsetKey), "redis watch")
+	if addCount != 1 {
+		return errors.New("already exists user:" + name)
+	}
+	return nil
 }
 
 func (r *RedisStorage) Count(ctx context.Context) (int64, error) {
@@ -71,4 +62,15 @@ func (r *RedisStorage) Get(ctx context.Context, name string) (int64, float64, er
 func (r *RedisStorage) Delete(ctx context.Context, name string) (bool, error) {
 	rem_n, err := r.client.ZRem(ctx, r.zsetKey, name).Result()
 	return rem_n == 1, errors.Wrap(err, "ZRem")
+}
+
+func (r *RedisStorage) Update(ctx context.Context, name string, score float64) error {
+	updateCount, err := r.client.ZAddXX(ctx, r.zsetKey, &redis.Z{Score: score, Member: name}).Result()
+	if err != nil {
+		return errors.Wrap(err, "r.client.ZAddXX")
+	}
+	if updateCount != 1 {
+		return errors.New("not exists user:" + name)
+	}
+	return nil
 }

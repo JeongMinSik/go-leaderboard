@@ -55,6 +55,10 @@ func (lb *LeaderBoard) DeleteUser(ctx context.Context, name string) (bool, error
 	return ok, errors.Wrap(err, "lb.redisStorage.Delete")
 }
 
+func (lb *LeaderBoard) UpdateUser(ctx context.Context, user User) error {
+	return errors.Wrap(lb.redisStorage.Update(ctx, user.Name, user.Score), "lb.redisStorage.Update")
+}
+
 func ErrorWithStatusCode(err error, statusCode int) error {
 	return Error{
 		origin:     err,

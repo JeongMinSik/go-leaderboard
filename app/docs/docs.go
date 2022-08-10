@@ -106,7 +106,7 @@ const docTemplate = `{
                 "summary": "Add a user",
                 "parameters": [
                     {
-                        "description": "User info",
+                        "description": "New User",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -163,6 +163,47 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "name 확인 필요",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "기존 user를 수정합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update a user",
+                "parameters": [
+                    {
+                        "description": "Updated User",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/leaderboard.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/leaderboard.UserRank"
+                        }
+                    },
+                    "400": {
+                        "description": "request body 확인 필요",
                         "schema": {
                             "$ref": "#/definitions/handler.messageData"
                         }

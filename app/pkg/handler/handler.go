@@ -24,6 +24,7 @@ func Setup(e *echo.Echo) {
 	e.GET("/users", handler.GetUser)
 	e.POST("/users", handler.AddUser)
 	e.DELETE("/users", handler.DeleteUser)
+	e.PATCH("/users", handler.UpdateUser)
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 }
@@ -38,7 +39,7 @@ type userCountData struct {
 
 type deleteData struct {
 	Name      string `json:"name"`
-	IsDeleted bool   `json:"is_deleted"`
+	IsDeleted bool   `json:"is_deleted`
 }
 
 func responseJSON(c echo.Context, statusCode int, data interface{}) error {
@@ -112,7 +113,7 @@ func (h *Handler) GetUser(c echo.Context) error {
 }
 
 // @Summary      Add a user
-// @Description  신규 user를 추가합니다. 이미 존재하면 업
+// @Description  신규 user를 추가합니다.
 // @Tags         Users
 // @accept		 json
 // @Produce      json
@@ -160,4 +161,29 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 		Name:      userName,
 		IsDeleted: ok,
 	})
+}
+
+// @Summary      Update a user
+// @Description  기존 user를 수정합니다.
+// @Tags         Users
+// @Produce      json
+// @Param        user   body    leaderboard.User  true  "Updated User"
+// @Success      200  {object}  leaderboard.UserRank
+// @Failure      400  {object}  messageData "request body 확인 필요"
+// @Failure      500  {object}  messageData "서버에러"
+// @Router       /users [patch]
+func (h *Handler) UpdateUser(c echo.Context) error {
+	ctx := context.Background()
+	user := leaderboard.User{}
+	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info"})
+	}
+	if err := h.leaderboard.UpdateUser(ctx, user); err != nil {
+		return errorJSON(c, err)
+	}
+	userRank, err := h.leaderboard.GetUser(ctx, user.Name)
+	if err != nil {
+		return errorJSON(c, err)
+	}
+	return responseJSON(c, http.StatusOK, userRank)
 }

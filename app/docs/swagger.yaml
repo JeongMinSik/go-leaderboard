@@ -115,12 +115,39 @@ paths:
       summary: Show a user info
       tags:
       - Users
+    patch:
+      description: 기존 user를 수정합니다.
+      parameters:
+      - description: Updated User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/leaderboard.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/leaderboard.UserRank'
+        "400":
+          description: request body 확인 필요
+          schema:
+            $ref: '#/definitions/handler.messageData'
+        "500":
+          description: 서버에러
+          schema:
+            $ref: '#/definitions/handler.messageData'
+      summary: Update a user
+      tags:
+      - Users
     post:
       consumes:
       - application/json
       description: 신규 user를 추가합니다.
       parameters:
-      - description: User info
+      - description: New User
         in: body
         name: user
         required: true
