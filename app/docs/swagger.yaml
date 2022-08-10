@@ -1,3 +1,23 @@
+definitions:
+  handler.messageData:
+    properties:
+      message:
+        type: string
+    type: object
+  handler.userCountData:
+    properties:
+      count:
+        type: integer
+    type: object
+  leaderboard.User:
+    properties:
+      name:
+        type: string
+      rank:
+        type: integer
+      score:
+        type: number
+    type: object
 host: localhost:6025
 info:
   contact:
@@ -28,4 +48,83 @@ paths:
             type: string
       tags:
       - test
+  /users:
+    get:
+      description: name으로 User의 score와 rank를 얻습니다.
+      parameters:
+      - description: User name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/leaderboard.User'
+        "400":
+          description: name param 확인 필요
+          schema:
+            $ref: '#/definitions/handler.messageData'
+        "500":
+          description: 서버에러
+          schema:
+            $ref: '#/definitions/handler.messageData'
+      summary: Show a user info
+      tags:
+      - Users
+    post:
+      description: 신규 user를 추가합니다.
+      parameters:
+      - description: User name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: User score
+        in: query
+        name: score
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/leaderboard.User'
+        "400":
+          description: name 또는 score param 확인 필요
+          schema:
+            $ref: '#/definitions/handler.messageData'
+        "500":
+          description: 서버에러
+          schema:
+            $ref: '#/definitions/handler.messageData'
+      summary: Add a user
+      tags:
+      - Users
+  /users/count:
+    get:
+      description: 전체 유저 수
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.userCountData'
+        "400":
+          description: name 또는 score param 확인 필요
+          schema:
+            $ref: '#/definitions/handler.messageData'
+        "500":
+          description: 서버에러
+          schema:
+            $ref: '#/definitions/handler.messageData'
+      summary: Get user count
+      tags:
+      - Users
 swagger: "2.0"

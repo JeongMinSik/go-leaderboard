@@ -43,6 +43,157 @@
                     }
                 }
             }
+        },
+        "/users": {
+            "get": {
+                "description": "name으로 User의 score와 rank를 얻습니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Show a user info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/leaderboard.User"
+                        }
+                    },
+                    "400": {
+                        "description": "name param 확인 필요",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "신규 user를 추가합니다.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Add a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "User score",
+                        "name": "score",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/leaderboard.User"
+                        }
+                    },
+                    "400": {
+                        "description": "name 또는 score param 확인 필요",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/count": {
+            "get": {
+                "description": "전체 유저 수",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user count",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.userCountData"
+                        }
+                    },
+                    "400": {
+                        "description": "name 또는 score param 확인 필요",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.messageData": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.userCountData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "leaderboard.User": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
         }
     }
 }
