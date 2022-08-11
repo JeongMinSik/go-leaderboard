@@ -1,7 +1,7 @@
 definitions:
   handler.deleteData:
     properties:
-      isDeleted:
+      is_deleted:
         type: boolean
       name:
         type: string
@@ -158,8 +158,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/leaderboard.UserRank'
         "400":

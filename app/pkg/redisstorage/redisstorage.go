@@ -60,8 +60,8 @@ func (r *RedisStorage) Get(ctx context.Context, name string) (int64, float64, er
 }
 
 func (r *RedisStorage) Delete(ctx context.Context, name string) (bool, error) {
-	rem_n, err := r.client.ZRem(ctx, r.zsetKey, name).Result()
-	return rem_n == 1, errors.Wrap(err, "ZRem")
+	remCount, err := r.client.ZRem(ctx, r.zsetKey, name).Result()
+	return remCount == 1, errors.Wrap(err, "ZRem")
 }
 
 func (r *RedisStorage) Update(ctx context.Context, name string, score float64) error {

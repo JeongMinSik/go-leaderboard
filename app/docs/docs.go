@@ -116,8 +116,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/leaderboard.UserRank"
                         }
@@ -302,7 +302,7 @@ const docTemplate = `{
         "handler.deleteData": {
             "type": "object",
             "properties": {
-                "isDeleted": {
+                "is_deleted": {
                     "type": "boolean"
                 },
                 "name": {

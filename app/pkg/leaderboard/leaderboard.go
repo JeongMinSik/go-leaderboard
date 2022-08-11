@@ -7,6 +7,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Interface interface {
+	UserCount(ctx context.Context) (int64, error)
+	AddUser(ctx context.Context, user User) error
+	GetUser(ctx context.Context, name string) (UserRank, error)
+	DeleteUser(ctx context.Context, name string) (bool, error)
+	UpdateUser(ctx context.Context, user User) error
+	GetUserList(ctx context.Context, start int64, stop int64) ([]User, error)
+}
+
 type LeaderBoard struct {
 	redisStorage *redisstorage.RedisStorage
 }
@@ -21,7 +30,7 @@ type UserRank struct {
 	Rank int64 `json:"rank"`
 }
 
-func New() *LeaderBoard {
+func New() Interface {
 	return &LeaderBoard{
 		redisStorage: redisstorage.New(),
 	}

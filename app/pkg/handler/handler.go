@@ -13,11 +13,11 @@ import (
 )
 
 type Handler struct {
-	leaderboard leaderboard.LeaderBoard
+	leaderboard leaderboard.Interface
 }
 
 func Setup(e *echo.Echo) {
-	handler := &Handler{*leaderboard.New()}
+	handler := &Handler{leaderboard.New()}
 
 	e.GET("/", handler.Hello)
 	e.GET("/teapot", handler.Teapot)
@@ -120,7 +120,7 @@ func (h *Handler) GetUser(c echo.Context) error {
 // @accept		 json
 // @Produce      json
 // @Param        user   body    leaderboard.User  true  "New User"
-// @Success      200  {object}  leaderboard.UserRank
+// @Success      201  {object}  leaderboard.UserRank
 // @Failure      400  {object}  messageData "request body 확인 필요"
 // @Failure      500  {object}  messageData "서버에러"
 // @Router       /users [post]
@@ -137,7 +137,7 @@ func (h *Handler) AddUser(c echo.Context) error {
 	if err != nil {
 		return errorJSON(c, err)
 	}
-	return responseJSON(c, http.StatusOK, userRank)
+	return responseJSON(c, http.StatusCreated, userRank)
 }
 
 // @Summary      Delete a user
