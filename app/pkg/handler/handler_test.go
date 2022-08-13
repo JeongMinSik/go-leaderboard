@@ -15,30 +15,30 @@ import (
 	"github.com/wangjia184/sortedset"
 )
 
-type TestLeaderBoard struct {
-	userSet sortedset.SortedSet
+type FakeLeaderBoard struct {
+	UserSet sortedset.SortedSet
 }
 
-func (lb *TestLeaderBoard) UserCount(_ context.Context) (int64, error) {
-	return int64(lb.userSet.GetCount()), nil
+func (lb *FakeLeaderBoard) UserCount(_ context.Context) (int64, error) {
+	return int64(lb.UserSet.GetCount()), nil
 }
 
-func (lb *TestLeaderBoard) AddUser(_ context.Context, user leaderboard.User) error {
-	if data := lb.userSet.GetByKey(user.Name); data != nil {
+func (lb *FakeLeaderBoard) AddUser(_ context.Context, user leaderboard.User) error {
+	if data := lb.UserSet.GetByKey(user.Name); data != nil {
 		return errors.New("already exists name: " + user.Name)
 	}
-	if ok := lb.userSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); !ok {
+	if ok := lb.UserSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); !ok {
 		return errors.New("update data: " + user.Name)
 	}
 	return nil
 }
 
-func (lb *TestLeaderBoard) GetUser(_ context.Context, name string) (*leaderboard.UserRank, error) {
-	rank := lb.userSet.FindRank(name)
+func (lb *FakeLeaderBoard) GetUser(_ context.Context, name string) (*leaderboard.UserRank, error) {
+	rank := lb.UserSet.FindRank(name)
 	if rank == 0 {
 		return nil, errors.New("not exists name: " + name)
 	}
-	node := lb.userSet.GetByKey(name)
+	node := lb.UserSet.GetByKey(name)
 	if node == nil {
 		return nil, errors.New("not exists name: " + name)
 	}
@@ -48,28 +48,28 @@ func (lb *TestLeaderBoard) GetUser(_ context.Context, name string) (*leaderboard
 			Score: float64(node.Score()),
 		},
 		// redis zset의 rank는 오름차순으로 0부터 시작하므로 보정
-		Rank: int64(lb.userSet.GetCount() - rank),
+		Rank: int64(lb.UserSet.GetCount() - rank),
 	}, nil
 }
 
-func (lb *TestLeaderBoard) DeleteUser(_ context.Context, name string) (bool, error) {
-	return lb.userSet.Remove(name) != nil, nil
+func (lb *FakeLeaderBoard) DeleteUser(_ context.Context, name string) (bool, error) {
+	return lb.UserSet.Remove(name) != nil, nil
 }
 
-func (lb *TestLeaderBoard) UpdateUser(_ context.Context, user leaderboard.User) error {
-	node := lb.userSet.GetByKey(user.Name)
+func (lb *FakeLeaderBoard) UpdateUser(_ context.Context, user leaderboard.User) error {
+	node := lb.UserSet.GetByKey(user.Name)
 	if node == nil {
 		return errors.New("not exists name: " + user.Name)
 	}
-	if ok := lb.userSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); ok {
+	if ok := lb.UserSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); ok {
 		return errors.New("new name: " + user.Name)
 	}
 	return nil
 }
 
-func (lb *TestLeaderBoard) GetUserList(_ context.Context, start int64, stop int64) ([]leaderboard.User, error) {
-	result := make([]leaderboard.User, 0, lb.userSet.GetCount())
-	nodes := lb.userSet.GetByRankRange(int(start+1), int(stop+1), false) // index + 1 보정
+func (lb *FakeLeaderBoard) GetUserList(_ context.Context, start int64, stop int64) ([]leaderboard.User, error) {
+	result := make([]leaderboard.User, 0, lb.UserSet.GetCount())
+	nodes := lb.UserSet.GetByRankRange(int(start+1), int(stop+1), false) // index + 1 보정
 	// sortedSet은 오름차순, redis zset은 내림차순이므로 역순으로 반환
 	for i := len(nodes) - 1; i >= 0; i-- {
 		result = append(result, leaderboard.User{
@@ -80,11 +80,61 @@ func (lb *TestLeaderBoard) GetUserList(_ context.Context, start int64, stop int6
 	return result, nil
 }
 
+func TestSetup(t *testing.T) {
+	e := echo.New()
+	handler := Handler{}
+	Setup(e, handler)
+	assert.Greater(t, len(e.Routes()), 0)
+}
+
+func TestErrorJSON(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+	err := leaderboard.ErrorWithStatusCode(errors.New("test error"), http.StatusBadRequest)
+	if assert.NoError(t, errorJSON(ctx, err)) {
+		const errorJSON = `{"message": "test error"}`
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		require.JSONEq(t, errorJSON, rec.Body.String())
+	}
+}
+
+func TestHello(t *testing.T) {
+	// Setup
+	e := echo.New()
+	h := &Handler{}
+
+	// AddUser
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	if assert.NoError(t, h.Hello(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "\"Hello go-leaderboard\"\n", rec.Body.String())
+	}
+}
+
+func TestTeapot(t *testing.T) {
+	// Setup
+	e := echo.New()
+	h := &Handler{}
+
+	// AddUser
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	if assert.NoError(t, h.Teapot(c)) {
+		assert.Equal(t, http.StatusTeapot, rec.Code)
+		assert.Equal(t, "\"I'm a teapot\"\n", rec.Body.String())
+	}
+}
+
 func TestAddUser(t *testing.T) {
 	// Setup
 	e := echo.New()
-	h := &Handler{&TestLeaderBoard{
-		userSet: *sortedset.New(),
+	h := &Handler{&FakeLeaderBoard{
+		UserSet: *sortedset.New(),
 	}}
 
 	// AddUser
@@ -104,8 +154,8 @@ func TestGetUser(t *testing.T) {
 	e := echo.New()
 	sortedSet := sortedset.New()
 	sortedSet.AddOrUpdate("Minsik", 10000, nil)
-	h := &Handler{&TestLeaderBoard{
-		userSet: *sortedSet,
+	h := &Handler{&FakeLeaderBoard{
+		UserSet: *sortedSet,
 	}}
 
 	// GetUser
@@ -124,8 +174,8 @@ func TestDeleteUser(t *testing.T) {
 	e := echo.New()
 	sortedSet := sortedset.New()
 	sortedSet.AddOrUpdate("Minsik", 10000, nil)
-	h := &Handler{&TestLeaderBoard{
-		userSet: *sortedSet,
+	h := &Handler{&FakeLeaderBoard{
+		UserSet: *sortedSet,
 	}}
 
 	// GetUserCount
@@ -165,8 +215,8 @@ func TestUpdateUser(t *testing.T) {
 	sortedSet := sortedset.New()
 	sortedSet.AddOrUpdate("Yumi", 500, nil)
 	sortedSet.AddOrUpdate("Minsik", 100, nil)
-	h := &Handler{&TestLeaderBoard{
-		userSet: *sortedSet,
+	h := &Handler{&FakeLeaderBoard{
+		UserSet: *sortedSet,
 	}}
 
 	// GetUser
@@ -200,8 +250,8 @@ func TestUserList(t *testing.T) {
 	sortedSet.AddOrUpdate("Minsik", 100, nil)
 	sortedSet.AddOrUpdate("Foo", 200, nil)
 	sortedSet.AddOrUpdate("FooFoo", 300, nil)
-	h := &Handler{&TestLeaderBoard{
-		userSet: *sortedSet,
+	h := &Handler{&FakeLeaderBoard{
+		UserSet: *sortedSet,
 	}}
 
 	// GetUserList 1

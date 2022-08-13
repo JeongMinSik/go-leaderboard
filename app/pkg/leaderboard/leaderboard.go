@@ -2,6 +2,7 @@ package leaderboard
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/redisstorage"
 	"github.com/pkg/errors"
@@ -30,10 +31,14 @@ type UserRank struct {
 	Rank int64 `json:"rank"`
 }
 
-func New() Interface {
-	return &LeaderBoard{
-		redisStorage: redisstorage.New(),
+func New() (Interface, error) {
+	db, err := redisstorage.New()
+	if err != nil {
+		return nil, errors.Wrap(err, "redisstorage.New()")
 	}
+	return &LeaderBoard{
+		redisStorage: db,
+	}, nil
 }
 
 func (lb *LeaderBoard) UserCount(ctx context.Context) (int64, error) {
@@ -71,7 +76,7 @@ func (lb *LeaderBoard) UpdateUser(ctx context.Context, user User) error {
 func (lb *LeaderBoard) GetUserList(ctx context.Context, start int64, stop int64) ([]User, error) {
 	userList, err := lb.redisStorage.Range(ctx, start, stop)
 	if err != nil {
-		return nil, errors.Wrap(err, "lb.redisStorage.Range")
+		return nil, ErrorWithStatusCode(errors.Wrap(err, "lb.redisStorage.Range"), http.StatusBadRequest)
 	}
 	result := make([]User, 0, len(userList))
 	for _, user := range userList {

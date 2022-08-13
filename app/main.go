@@ -4,6 +4,7 @@ import (
 	_ "github.com/JeongMinSik/go-leaderboard/docs"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/handler"
+	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
 )
 
@@ -18,6 +19,13 @@ import (
 // @host localhost:6025
 func main() {
 	e := echo.New()
-	handler.Setup(e)
+	lb, err := leaderboard.New()
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+	hd := handler.Handler{
+		Leaderboard: lb,
+	}
+	handler.Setup(e, hd)
 	e.Logger.Fatal(e.Start(":6025"))
 }

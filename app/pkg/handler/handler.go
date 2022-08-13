@@ -13,12 +13,10 @@ import (
 )
 
 type Handler struct {
-	leaderboard leaderboard.Interface
+	Leaderboard leaderboard.Interface
 }
 
-func Setup(e *echo.Echo) {
-	handler := &Handler{leaderboard.New()}
-
+func Setup(e *echo.Echo, handler Handler) {
 	e.GET("/", handler.Hello)
 	e.GET("/teapot", handler.Teapot)
 	e.GET("/users/count", handler.GetUserCount)
@@ -85,7 +83,7 @@ func (h *Handler) Teapot(c echo.Context) error {
 // @Router       /users/count [get]
 func (h *Handler) GetUserCount(c echo.Context) error {
 	ctx := context.Background()
-	count, err := h.leaderboard.UserCount(ctx)
+	count, err := h.Leaderboard.UserCount(ctx)
 	if err != nil {
 		return errorJSON(c, err)
 	}
@@ -107,7 +105,7 @@ func (h *Handler) GetUser(c echo.Context) error {
 	if userName == "" {
 		return responseJSON(c, http.StatusBadRequest, messageData{"user name is empty"})
 	}
-	user, err := h.leaderboard.GetUser(ctx, userName)
+	user, err := h.Leaderboard.GetUser(ctx, userName)
 	if err != nil {
 		return errorJSON(c, err)
 	}
@@ -130,10 +128,10 @@ func (h *Handler) AddUser(c echo.Context) error {
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info: " + err.Error()})
 	}
-	if err := h.leaderboard.AddUser(ctx, user); err != nil {
+	if err := h.Leaderboard.AddUser(ctx, user); err != nil {
 		return errorJSON(c, err)
 	}
-	userRank, err := h.leaderboard.GetUser(ctx, user.Name)
+	userRank, err := h.Leaderboard.GetUser(ctx, user.Name)
 	if err != nil {
 		return errorJSON(c, err)
 	}
@@ -155,7 +153,7 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 	if userName == "" {
 		return responseJSON(c, http.StatusBadRequest, messageData{"user name is empty"})
 	}
-	ok, err := h.leaderboard.DeleteUser(ctx, userName)
+	ok, err := h.Leaderboard.DeleteUser(ctx, userName)
 	if err != nil {
 		return errorJSON(c, err)
 	}
@@ -181,10 +179,10 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
 		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info"})
 	}
-	if err := h.leaderboard.UpdateUser(ctx, user); err != nil {
+	if err := h.Leaderboard.UpdateUser(ctx, user); err != nil {
 		return errorJSON(c, err)
 	}
-	userRank, err := h.leaderboard.GetUser(ctx, user.Name)
+	userRank, err := h.Leaderboard.GetUser(ctx, user.Name)
 	if err != nil {
 		return errorJSON(c, err)
 	}
@@ -212,7 +210,7 @@ func (h *Handler) GetUserList(c echo.Context) error {
 		return responseJSON(c, http.StatusBadRequest, messageData{"invalid stop index: " + err.Error()})
 	}
 
-	userList, err := h.leaderboard.GetUserList(ctx, start, stop)
+	userList, err := h.Leaderboard.GetUserList(ctx, start, stop)
 	if err != nil {
 		return errorJSON(c, err)
 	}

@@ -13,14 +13,21 @@ type RedisStorage struct {
 	client  *redis.Client
 }
 
-func New() *RedisStorage {
+func New() (*RedisStorage, error) {
 	zsetKey := "scores"
 	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		return nil, errors.New("empty redis addr")
+	}
+	db := redis.NewClient(&redis.Options{Addr: redisAddr})
+	if db == nil {
+		return nil, errors.New("redis client is nil")
+	}
 
 	return &RedisStorage{
 		zsetKey: zsetKey,
-		client:  redis.NewClient(&redis.Options{Addr: redisAddr}),
-	}
+		client:  db,
+	}, nil
 }
 
 func NewMock(zsetKey string, db *redis.Client) *RedisStorage {

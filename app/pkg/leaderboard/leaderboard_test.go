@@ -2,6 +2,8 @@ package leaderboard
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/redisstorage"
@@ -11,6 +13,26 @@ import (
 )
 
 const ZSetKeyName = "scores"
+
+func TestNew(t *testing.T) {
+	_, err := New()
+	assert.ErrorContains(t, err, "empty redis addr")
+}
+
+func TestErrorWithStatusCode(t *testing.T) {
+	origin := errors.New("test error")
+	err := ErrorWithStatusCode(origin, http.StatusBadRequest)
+	var apiErr interface {
+		StatusCode() int
+		Error() string
+		Unwrap() error
+	}
+	if assert.Equal(t, true, errors.As(err, &apiErr)) {
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode())
+		assert.Equal(t, "test error", apiErr.Error())
+		assert.Equal(t, origin, apiErr.Unwrap())
+	}
+}
 
 func TestUserCount(t *testing.T) {
 	ctx := context.Background()
