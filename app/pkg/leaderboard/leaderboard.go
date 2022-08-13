@@ -10,7 +10,7 @@ import (
 type Interface interface {
 	UserCount(ctx context.Context) (int64, error)
 	AddUser(ctx context.Context, user User) error
-	GetUser(ctx context.Context, name string) (UserRank, error)
+	GetUser(ctx context.Context, name string) (*UserRank, error)
 	DeleteUser(ctx context.Context, name string) (bool, error)
 	UpdateUser(ctx context.Context, user User) error
 	GetUserList(ctx context.Context, start int64, stop int64) ([]User, error)
@@ -45,12 +45,12 @@ func (lb *LeaderBoard) AddUser(ctx context.Context, user User) error {
 	return errors.Wrap(lb.redisStorage.Add(ctx, user.Name, user.Score), "lb.redisStorage.Add")
 }
 
-func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (UserRank, error) {
+func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (*UserRank, error) {
 	rank, score, err := lb.redisStorage.Get(ctx, name)
 	if err != nil {
-		return UserRank{}, errors.Wrap(err, "lb.redisStorage.Get")
+		return nil, errors.Wrap(err, "lb.redisStorage.Get")
 	}
-	return UserRank{
+	return &UserRank{
 		User: User{
 			Name:  name,
 			Score: score,
