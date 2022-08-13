@@ -23,6 +23,13 @@ func New() *RedisStorage {
 	}
 }
 
+func NewMock(zsetKey string, db *redis.Client) *RedisStorage {
+	return &RedisStorage{
+		zsetKey: zsetKey,
+		client:  db,
+	}
+}
+
 func (r *RedisStorage) Add(ctx context.Context, name string, score float64) error {
 	addCount, err := r.client.ZAddNX(ctx, r.zsetKey, &redis.Z{Score: score, Member: name}).Result()
 	if err != nil {
