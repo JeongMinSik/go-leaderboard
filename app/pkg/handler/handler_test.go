@@ -69,7 +69,7 @@ func (lb *TestLeaderBoard) UpdateUser(_ context.Context, user leaderboard.User) 
 
 func (lb *TestLeaderBoard) GetUserList(_ context.Context, start int64, stop int64) ([]leaderboard.User, error) {
 	result := make([]leaderboard.User, 0, lb.userSet.GetCount())
-	nodes := lb.userSet.GetByRankRange(int(start), int(stop), false)
+	nodes := lb.userSet.GetByRankRange(int(start+1), int(stop+1), false) // index + 1 보정
 	// sortedSet은 오름차순, redis zset은 내림차순이므로 역순으로 반환
 	for i := len(nodes) - 1; i >= 0; i-- {
 		result = append(result, leaderboard.User{
@@ -189,5 +189,50 @@ func TestUpdateUser(t *testing.T) {
 		const newUserJSON = `{"name": "Minsik", "score": 10000, "rank":0}`
 		assert.Equal(t, http.StatusOK, rec2.Code)
 		require.JSONEq(t, newUserJSON, rec2.Body.String())
+	}
+}
+
+func TestUserList(t *testing.T) {
+	// Setup
+	e := echo.New()
+	sortedSet := sortedset.New()
+	sortedSet.AddOrUpdate("Yumi", 500, nil)
+	sortedSet.AddOrUpdate("Minsik", 100, nil)
+	sortedSet.AddOrUpdate("Foo", 200, nil)
+	sortedSet.AddOrUpdate("FooFoo", 300, nil)
+	h := &Handler{&TestLeaderBoard{
+		userSet: *sortedSet,
+	}}
+
+	// GetUserList 1
+	req := httptest.NewRequest(http.MethodGet, "/users/:start/to/:stop", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetParamNames("start", "stop")
+	c.SetParamValues("1", "2")
+	if assert.NoError(t, h.GetUserList(c)) {
+		const userListJSON = `[
+			{"name": "FooFoo", "score": 300},
+			{"name": "Foo", "score": 200}
+		]`
+		assert.Equal(t, http.StatusOK, rec.Code)
+		require.JSONEq(t, userListJSON, rec.Body.String())
+	}
+
+	// GetUserList 2
+	req2 := httptest.NewRequest(http.MethodGet, "/users/:start/to/:stop", nil)
+	rec2 := httptest.NewRecorder()
+	c2 := e.NewContext(req2, rec2)
+	c2.SetParamNames("start", "stop")
+	c2.SetParamValues("0", "3")
+	if assert.NoError(t, h.GetUserList(c2)) {
+		const userListJSON = `[
+			{"name": "Yumi", "score": 500},
+			{"name": "FooFoo", "score": 300},
+			{"name": "Foo", "score": 200},
+			{"name": "Minsik", "score": 100}
+		]`
+		assert.Equal(t, http.StatusOK, rec2.Code)
+		require.JSONEq(t, userListJSON, rec2.Body.String())
 	}
 }
