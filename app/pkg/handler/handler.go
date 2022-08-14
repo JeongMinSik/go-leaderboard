@@ -126,7 +126,7 @@ func (h *Handler) AddUser(c echo.Context) error {
 	ctx := context.Background()
 	user := leaderboard.User{}
 	if err := json.NewDecoder(c.Request().Body).Decode(&user); err != nil {
-		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info: " + err.Error()})
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid body: user info"})
 	}
 	if err := h.Leaderboard.AddUser(ctx, user); err != nil {
 		return errorJSON(c, err)
@@ -203,11 +203,11 @@ func (h *Handler) GetUserList(c echo.Context) error {
 	ctx := context.Background()
 	start, err := strconv.ParseInt(c.Param("start"), 0, 64)
 	if err != nil {
-		return responseJSON(c, http.StatusBadRequest, messageData{"invalid start index: " + err.Error()})
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid start index"})
 	}
 	stop, err := strconv.ParseInt(c.Param("stop"), 0, 64)
 	if err != nil {
-		return responseJSON(c, http.StatusBadRequest, messageData{"invalid stop index: " + err.Error()})
+		return responseJSON(c, http.StatusBadRequest, messageData{"invalid stop index"})
 	}
 
 	userList, err := h.Leaderboard.GetUserList(ctx, start, stop)

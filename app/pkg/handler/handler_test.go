@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wangjia184/sortedset"
@@ -25,10 +25,12 @@ func (lb *FakeLeaderBoard) UserCount(_ context.Context) (int64, error) {
 
 func (lb *FakeLeaderBoard) AddUser(_ context.Context, user leaderboard.User) error {
 	if data := lb.UserSet.GetByKey(user.Name); data != nil {
-		return errors.New("already exists name: " + user.Name)
+		err := leaderboard.ErrorWithStatusCode(errors.New("already exists name: "+user.Name), http.StatusBadRequest)
+		return errors.Wrap(err, "lb.UserSet.GetByKey")
 	}
 	if ok := lb.UserSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); !ok {
-		return errors.New("update data: " + user.Name)
+		err := leaderboard.ErrorWithStatusCode(errors.New("update data: "+user.Name), http.StatusInternalServerError)
+		return errors.Wrap(err, "lb.UserSet.AddOrUpdate")
 	}
 	return nil
 }
@@ -36,11 +38,13 @@ func (lb *FakeLeaderBoard) AddUser(_ context.Context, user leaderboard.User) err
 func (lb *FakeLeaderBoard) GetUser(_ context.Context, name string) (*leaderboard.UserRank, error) {
 	rank := lb.UserSet.FindRank(name)
 	if rank == 0 {
-		return nil, errors.New("not exists name: " + name)
+		err := leaderboard.ErrorWithStatusCode(errors.New("not exists name: "+name), http.StatusBadRequest)
+		return nil, errors.Wrap(err, "lb.UserSet.FindRank")
 	}
 	node := lb.UserSet.GetByKey(name)
 	if node == nil {
-		return nil, errors.New("not exists name: " + name)
+		err := leaderboard.ErrorWithStatusCode(errors.New("not exists name: "+name), http.StatusBadRequest)
+		return nil, errors.Wrap(err, "lb.UserSet.GetByKey")
 	}
 	return &leaderboard.UserRank{
 		User: leaderboard.User{
@@ -59,10 +63,12 @@ func (lb *FakeLeaderBoard) DeleteUser(_ context.Context, name string) (bool, err
 func (lb *FakeLeaderBoard) UpdateUser(_ context.Context, user leaderboard.User) error {
 	node := lb.UserSet.GetByKey(user.Name)
 	if node == nil {
-		return errors.New("not exists name: " + user.Name)
+		err := leaderboard.ErrorWithStatusCode(errors.New("not exists user: "+user.Name), http.StatusBadRequest)
+		return errors.Wrap(err, "lb.UserSet.GetByKey")
 	}
 	if ok := lb.UserSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); ok {
-		return errors.New("new name: " + user.Name)
+		err := leaderboard.ErrorWithStatusCode(errors.New("new name: "+user.Name), http.StatusInternalServerError)
+		return errors.Wrap(err, "lb.UserSet.AddOrUpdate")
 	}
 	return nil
 }
@@ -98,6 +104,7 @@ func TestErrorJSON(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		require.JSONEq(t, errorJSON, rec.Body.String())
 	}
+	assert.NoError(t, errorJSON(ctx, nil))
 }
 
 func TestHello(t *testing.T) {
@@ -147,6 +154,18 @@ func TestAddUser(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rec.Code)
 		require.JSONEq(t, userJSON, rec.Body.String())
 	}
+
+	// AddUser - error
+	const invalidJSON = `{"name": "Mins`
+	req2 := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(invalidJSON))
+	req2.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec2 := httptest.NewRecorder()
+	c2 := e.NewContext(req2, rec2)
+	if assert.NoError(t, h.AddUser(c2)) {
+		const errorJSON = `{"message": "invalid body: user info"}`
+		assert.Equal(t, http.StatusBadRequest, rec2.Code)
+		require.JSONEq(t, errorJSON, rec2.Body.String())
+	}
 }
 
 func TestGetUser(t *testing.T) {
@@ -166,6 +185,26 @@ func TestGetUser(t *testing.T) {
 		const userJSON = `{"name": "Minsik", "score": 10000, "rank":0}`
 		assert.Equal(t, http.StatusOK, rec.Code)
 		require.JSONEq(t, userJSON, rec.Body.String())
+	}
+
+	// GetUser - not exists
+	req2 := httptest.NewRequest(http.MethodGet, "/users?name=Foo", nil)
+	rec2 := httptest.NewRecorder()
+	c2 := e.NewContext(req2, rec2)
+	if assert.NoError(t, h.GetUser(c2)) {
+		const errorJSON = `{"message": "lb.UserSet.FindRank: not exists name: Foo"}`
+		assert.Equal(t, http.StatusBadRequest, rec2.Code)
+		require.JSONEq(t, errorJSON, rec2.Body.String())
+	}
+
+	// GetUser - empty name
+	req3 := httptest.NewRequest(http.MethodGet, "/users", nil)
+	rec3 := httptest.NewRecorder()
+	c3 := e.NewContext(req3, rec3)
+	if assert.NoError(t, h.GetUser(c3)) {
+		const errorJSON = `{"message": "user name is empty"}`
+		assert.Equal(t, http.StatusBadRequest, rec3.Code)
+		require.JSONEq(t, errorJSON, rec3.Body.String())
 	}
 }
 
@@ -207,6 +246,16 @@ func TestDeleteUser(t *testing.T) {
 		const countJSON = `{"count": 0}`
 		require.JSONEq(t, countJSON, rec3.Body.String())
 	}
+
+	// DeleteUser - error
+	req4 := httptest.NewRequest(http.MethodDelete, "/users", nil)
+	rec4 := httptest.NewRecorder()
+	c4 := e.NewContext(req4, rec4)
+	if assert.NoError(t, h.DeleteUser(c4)) {
+		const errorJSON = `{"message": "user name is empty"}`
+		assert.Equal(t, http.StatusBadRequest, rec4.Code)
+		require.JSONEq(t, errorJSON, rec4.Body.String())
+	}
 }
 
 func TestUpdateUser(t *testing.T) {
@@ -239,6 +288,30 @@ func TestUpdateUser(t *testing.T) {
 		const newUserJSON = `{"name": "Minsik", "score": 10000, "rank":0}`
 		assert.Equal(t, http.StatusOK, rec2.Code)
 		require.JSONEq(t, newUserJSON, rec2.Body.String())
+	}
+
+	// UpdateUser - invalid body
+	const invalidJSON = `{"name": "Minsik", "scor`
+	req3 := httptest.NewRequest(http.MethodPatch, "/users", strings.NewReader(invalidJSON))
+	req3.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec3 := httptest.NewRecorder()
+	c3 := e.NewContext(req3, rec3)
+	if assert.NoError(t, h.UpdateUser(c3)) {
+		const errorJSON = `{"message": "invalid body: user info"}`
+		assert.Equal(t, http.StatusBadRequest, rec3.Code)
+		require.JSONEq(t, errorJSON, rec3.Body.String())
+	}
+
+	// UpdateUser - not exists
+	const notExistsUserJSON = `{"name": "FooFoo", "score": 200}`
+	req4 := httptest.NewRequest(http.MethodPatch, "/users", strings.NewReader(notExistsUserJSON))
+	req4.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec4 := httptest.NewRecorder()
+	c4 := e.NewContext(req4, rec4)
+	if assert.NoError(t, h.UpdateUser(c4)) {
+		const errorJSON = `{"message": "lb.UserSet.GetByKey: not exists user: FooFoo"}`
+		assert.Equal(t, http.StatusBadRequest, rec4.Code)
+		require.JSONEq(t, errorJSON, rec4.Body.String())
 	}
 }
 
@@ -284,5 +357,29 @@ func TestUserList(t *testing.T) {
 		]`
 		assert.Equal(t, http.StatusOK, rec2.Code)
 		require.JSONEq(t, userListJSON, rec2.Body.String())
+	}
+
+	// GetUserList - invalid start
+	req3 := httptest.NewRequest(http.MethodGet, "/users/:start/to/:stop", nil)
+	rec3 := httptest.NewRecorder()
+	c3 := e.NewContext(req3, rec3)
+	c3.SetParamNames("start", "stop")
+	c3.SetParamValues("abc", "3")
+	if assert.NoError(t, h.GetUserList(c3)) {
+		const errorJSON = `{"message": "invalid start index"}`
+		assert.Equal(t, http.StatusBadRequest, rec3.Code)
+		require.JSONEq(t, errorJSON, rec3.Body.String())
+	}
+
+	// GetUserList - invalid end
+	req4 := httptest.NewRequest(http.MethodGet, "/users/:start/to/:stop", nil)
+	rec4 := httptest.NewRecorder()
+	c4 := e.NewContext(req4, rec4)
+	c4.SetParamNames("start", "stop")
+	c4.SetParamValues("2", "xyz")
+	if assert.NoError(t, h.GetUserList(c4)) {
+		const errorJSON = `{"message": "invalid stop index"}`
+		assert.Equal(t, http.StatusBadRequest, rec4.Code)
+		require.JSONEq(t, errorJSON, rec4.Body.String())
 	}
 }
