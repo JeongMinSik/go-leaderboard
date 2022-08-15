@@ -53,24 +53,27 @@ func (r *RedisStorage) Count(ctx context.Context) (int64, error) {
 	return count, errors.Wrap(err, "ZCount")
 }
 
-func (r *RedisStorage) Get(ctx context.Context, name string) (int64, float64, error) {
+func (r *RedisStorage) Get(ctx context.Context, name string) (bool, int64, float64, error) {
 	pipe := r.client.TxPipeline()
 	scoreCmd := pipe.ZScore(ctx, r.zsetKey, name)
 	rankCmd := pipe.ZRank(ctx, r.zsetKey, name)
 	if _, err := pipe.Exec(ctx); err != nil {
-		return -1, 0.0, errors.Wrap(err, "pipe.Exec")
+		if errors.Is(err, redis.Nil) {
+			return false, -1, 0.0, nil
+		}
+		return false, -1, 0.0, errors.Wrap(err, "pipe.Exec")
 	}
 	score, err := scoreCmd.Result()
 	if err != nil {
-		return -1, 0.0, errors.Wrap(err, "scoreCmd.Result")
+		return false, -1, 0.0, errors.Wrap(err, "scoreCmd.Result")
 	}
 
 	rank, err := rankCmd.Result()
 	if err != nil {
-		return -1, 0.0, errors.Wrap(err, "rankCmd.Result")
+		return false, -1, 0.0, errors.Wrap(err, "rankCmd.Result")
 	}
 
-	return rank, score, nil
+	return true, rank, score, nil
 }
 
 func (r *RedisStorage) Delete(ctx context.Context, name string) (bool, error) {
@@ -78,15 +81,12 @@ func (r *RedisStorage) Delete(ctx context.Context, name string) (bool, error) {
 	return remCount == 1, errors.Wrap(err, "ZRem")
 }
 
-func (r *RedisStorage) Update(ctx context.Context, name string, score float64) error {
+func (r *RedisStorage) Update(ctx context.Context, name string, score float64) (bool, error) {
 	updateCount, err := r.client.ZAddXX(ctx, r.zsetKey, &redis.Z{Score: score, Member: name}).Result()
 	if err != nil {
-		return errors.Wrap(err, "r.client.ZAddXX")
+		return false, errors.Wrap(err, "r.client.ZAddXX")
 	}
-	if updateCount != 1 {
-		return errors.New("not exists user:" + name)
-	}
-	return nil
+	return updateCount == 1, nil
 }
 
 func (r *RedisStorage) Range(ctx context.Context, start int64, stop int64) ([]redis.Z, error) {

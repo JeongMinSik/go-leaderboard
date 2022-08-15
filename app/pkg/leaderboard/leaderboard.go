@@ -36,6 +36,9 @@ func New() (Interface, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "redisstorage.New()")
 	}
+	if db == nil {
+		return nil, errors.New("redis nil")
+	}
 	return &LeaderBoard{
 		redisStorage: db,
 	}, nil
@@ -51,9 +54,11 @@ func (lb *LeaderBoard) AddUser(ctx context.Context, user User) error {
 }
 
 func (lb *LeaderBoard) GetUser(ctx context.Context, name string) (*UserRank, error) {
-	rank, score, err := lb.redisStorage.Get(ctx, name)
+	exists, rank, score, err := lb.redisStorage.Get(ctx, name)
 	if err != nil {
 		return nil, errors.Wrap(err, "lb.redisStorage.Get")
+	} else if !exists {
+		return nil, ErrorWithStatusCode(errors.New("not exists user: "+name), http.StatusNotFound)
 	}
 	return &UserRank{
 		User: User{
@@ -70,7 +75,14 @@ func (lb *LeaderBoard) DeleteUser(ctx context.Context, name string) (bool, error
 }
 
 func (lb *LeaderBoard) UpdateUser(ctx context.Context, user User) error {
-	return errors.Wrap(lb.redisStorage.Update(ctx, user.Name, user.Score), "lb.redisStorage.Update")
+	exists, err := lb.redisStorage.Update(ctx, user.Name, user.Score)
+	if err != nil {
+		return errors.Wrap(err, "lb.redisStorage.Update")
+	}
+	if !exists {
+		return ErrorWithStatusCode(errors.New("not exists user:"+user.Name), http.StatusNotFound)
+	}
+	return nil
 }
 
 func (lb *LeaderBoard) GetUserList(ctx context.Context, start int64, stop int64) ([]User, error) {

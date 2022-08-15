@@ -38,13 +38,13 @@ func (lb *FakeLeaderBoard) AddUser(_ context.Context, user leaderboard.User) err
 func (lb *FakeLeaderBoard) GetUser(_ context.Context, name string) (*leaderboard.UserRank, error) {
 	rank := lb.UserSet.FindRank(name)
 	if rank == 0 {
-		err := leaderboard.ErrorWithStatusCode(errors.New("not exists name: "+name), http.StatusBadRequest)
-		return nil, errors.Wrap(err, "lb.UserSet.FindRank")
+		err := leaderboard.ErrorWithStatusCode(errors.New(name), http.StatusNotFound)
+		return nil, errors.Wrap(err, "not exists user")
 	}
 	node := lb.UserSet.GetByKey(name)
 	if node == nil {
-		err := leaderboard.ErrorWithStatusCode(errors.New("not exists name: "+name), http.StatusBadRequest)
-		return nil, errors.Wrap(err, "lb.UserSet.GetByKey")
+		err := leaderboard.ErrorWithStatusCode(errors.New(name), http.StatusNotFound)
+		return nil, errors.Wrap(err, "not exists user")
 	}
 	return &leaderboard.UserRank{
 		User: leaderboard.User{
@@ -63,8 +63,8 @@ func (lb *FakeLeaderBoard) DeleteUser(_ context.Context, name string) (bool, err
 func (lb *FakeLeaderBoard) UpdateUser(_ context.Context, user leaderboard.User) error {
 	node := lb.UserSet.GetByKey(user.Name)
 	if node == nil {
-		err := leaderboard.ErrorWithStatusCode(errors.New("not exists user: "+user.Name), http.StatusBadRequest)
-		return errors.Wrap(err, "lb.UserSet.GetByKey")
+		err := leaderboard.ErrorWithStatusCode(errors.New(user.Name), http.StatusNotFound)
+		return errors.Wrap(err, "not exists user")
 	}
 	if ok := lb.UserSet.AddOrUpdate(user.Name, sortedset.SCORE(user.Score), nil); ok {
 		err := leaderboard.ErrorWithStatusCode(errors.New("new name: "+user.Name), http.StatusInternalServerError)
@@ -185,8 +185,8 @@ func TestGetUser(t *testing.T) {
 	rec2 := httptest.NewRecorder()
 	c2 := e.NewContext(req2, rec2)
 	if assert.NoError(t, h.GetUser(c2)) {
-		const errorJSON = `{"message": "lb.UserSet.FindRank: not exists name: Foo"}`
-		assert.Equal(t, http.StatusBadRequest, rec2.Code)
+		const errorJSON = `{"message": "not exists user: Foo"}`
+		assert.Equal(t, http.StatusNotFound, rec2.Code)
 		require.JSONEq(t, errorJSON, rec2.Body.String())
 	}
 
@@ -302,8 +302,8 @@ func TestUpdateUser(t *testing.T) {
 	rec4 := httptest.NewRecorder()
 	c4 := e.NewContext(req4, rec4)
 	if assert.NoError(t, h.UpdateUser(c4)) {
-		const errorJSON = `{"message": "lb.UserSet.GetByKey: not exists user: FooFoo"}`
-		assert.Equal(t, http.StatusBadRequest, rec4.Code)
+		const errorJSON = `{"message": "not exists user: FooFoo"}`
+		assert.Equal(t, http.StatusNotFound, rec4.Code)
 		require.JSONEq(t, errorJSON, rec4.Body.String())
 	}
 }
