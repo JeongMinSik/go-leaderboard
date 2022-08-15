@@ -9,24 +9,10 @@ import (
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 type Handler struct {
 	Leaderboard leaderboard.Interface
-}
-
-func Setup(e *echo.Echo, handler Handler) {
-	e.GET("/", handler.Hello)
-	e.GET("/teapot", handler.Teapot)
-	e.GET("/users/count", handler.GetUserCount)
-	e.GET("/users", handler.GetUser)
-	e.POST("/users", handler.AddUser)
-	e.DELETE("/users", handler.DeleteUser)
-	e.PATCH("/users", handler.UpdateUser)
-	e.GET("/users/:start/to/:stop", handler.GetUserList)
-
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
 }
 
 type messageData struct {

@@ -86,13 +86,6 @@ func (lb *FakeLeaderBoard) GetUserList(_ context.Context, start int64, stop int6
 	return result, nil
 }
 
-func TestSetup(t *testing.T) {
-	e := echo.New()
-	handler := Handler{}
-	Setup(e, handler)
-	assert.Greater(t, len(e.Routes()), 0)
-}
-
 func TestErrorJSON(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", nil)

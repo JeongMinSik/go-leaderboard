@@ -5,7 +5,9 @@ import (
 
 	"github.com/JeongMinSik/go-leaderboard/pkg/handler"
 	"github.com/JeongMinSik/go-leaderboard/pkg/leaderboard"
+	"github.com/JeongMinSik/go-leaderboard/pkg/logger"
 	"github.com/labstack/echo/v4"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 // @title       Leaderboard API
@@ -19,13 +21,34 @@ import (
 // @host localhost:6025
 func main() {
 	e := echo.New()
+	SetupLogger(e)
 	lb, err := leaderboard.New()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	hd := handler.Handler{
+	SetupHandler(e, lb)
+	e.Logger.Fatal(e.Start(":6025"))
+}
+
+func SetupLogger(e *echo.Echo) {
+	log := logger.New()
+	if err := log.AddElasticHook(e, "api-log"); err != nil {
+		log.Panic(err)
+	}
+}
+
+func SetupHandler(e *echo.Echo, lb leaderboard.Interface) {
+	hdler := handler.Handler{
 		Leaderboard: lb,
 	}
-	handler.Setup(e, hd)
-	e.Logger.Fatal(e.Start(":6025"))
+	e.GET("/", hdler.Hello)
+	e.GET("/teapot", hdler.Teapot)
+	e.GET("/users/count", hdler.GetUserCount)
+	e.GET("/users", hdler.GetUser)
+	e.POST("/users", hdler.AddUser)
+	e.DELETE("/users", hdler.DeleteUser)
+	e.PATCH("/users", hdler.UpdateUser)
+	e.GET("/users/:start/to/:stop", hdler.GetUserList)
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 }
