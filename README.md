@@ -14,39 +14,40 @@ docker compose up
 ```
 
 # OpenApi Document
-- 실행 후 http://localhost:6025/swagger/index.html 에서 확인
+- https://app.swaggerhub.com/apis-docs/JeongMinSik/leaderboard-api/1.0
+- 실행 후 http://localhost:6025/swagger/index.html 에서도 확인
 
 # 기술 스택
 ### 언어
-- Go
+- __Go__
     - [echo framework](https://github.com/labstack/echo) 사용
 
 ### DB
-- Redis
+- __Redis__
     - [ZSet](https://redis.io/docs/data-types/sorted-sets/) 사용하여 순위 관리
     - 테스트 코드에서는 [go-redismock](https://github.com/go-redis/redismock) 패키지 사용
 
 ### Log
-- Elasticsearch
+- __Elasticsearch__
     - 날짜별 인덱스 생성: "api-log-YYYY-mm-dd"
     - [elogrus](https://github.com/sohlich/elogrus) 패키지를 사용하여 [logrus](https://github.com/sirupsen/logrus)의 hook에 elasticsearch 연결
-- Kibana
+- __Kibana__
     - log 시각화 툴로 사용
 
 ### Tools
-- Docker Compose
+- __Docker Compose__
     - go api server, redis, elasticsearch, kibana 간편하게 구동 가능
-- Swagger
+- __Swagger__
     - [swaggo](https://github.com/swaggo/swag) 패키지를 사용하여 주석으로 api 정의
-- golangci-lint
+- __golangci-lint__
     - [.golangci.yaml](https://github.com/JeongMinSik/go-leaderboard/blob/master/app/.golangci.yaml)로 rules 정의
 
 ### CI(Github Actions)
-- lint check
-- test
+- __lint check__
+- __test__
     - [Codecov](https://app.codecov.io/gh/JeongMinSik/go-leaderboard)로 Test Coverage 확인
-- build
-- load test
+- __build__
+- __load test__
     - docker compose로 서버 실행 후
     - [iter8](https://github.com/iter8-tools/iter8) Github Action을 사용하여 간단한 부하테스트(SLO 설정)
     - example:
