@@ -220,7 +220,33 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/:start/to/:stop": {
+        "/users/count": {
+            "get": {
+                "description": "전체 유저 수",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user count",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.userCountData"
+                        }
+                    },
+                    "500": {
+                        "description": "서버에러",
+                        "schema": {
+                            "$ref": "#/definitions/handler.messageData"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{start}/to/{stop}": {
             "get": {
                 "description": "user list 를 받아옵니다.",
                 "produces": [
@@ -260,32 +286,6 @@ const docTemplate = `{
                         "description": "param 확인 필요",
                         "schema": {
                             "$ref": "#/definitions/handler.messageData"
-                        }
-                    },
-                    "500": {
-                        "description": "서버에러",
-                        "schema": {
-                            "$ref": "#/definitions/handler.messageData"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/count": {
-            "get": {
-                "description": "전체 유저 수",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Get user count",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handler.userCountData"
                         }
                     },
                     "500": {

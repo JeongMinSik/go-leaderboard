@@ -173,7 +173,7 @@ paths:
       summary: Add a user
       tags:
       - Users
-  /users/:start/to/:stop:
+  /users/{start}/to/{stop}:
     get:
       description: user list 를 받아옵니다.
       parameters:

@@ -60,13 +60,13 @@ func (h *Handler) Teapot(c echo.Context) error {
 	return responseJSON(c, http.StatusTeapot, "I'm a teapot")
 }
 
-// @Summary      Get user count
-// @Description  전체 유저 수
-// @Tags         Users
-// @Produce      json
-// @Success      200  {object}  userCountData
-// @Failure      500  {object}  messageData "서버에러"
-// @Router       /users/count [get]
+// @Summary     Get user count
+// @Description 전체 유저 수
+// @Tags        Users
+// @Produce     json
+// @Success     200 {object} userCountData
+// @Failure     500 {object} messageData "서버에러"
+// @Router      /users/count [get]
 func (h *Handler) GetUserCount(c echo.Context) error {
 	ctx := context.Background()
 	count, err := h.Leaderboard.UserCount(ctx)
@@ -76,15 +76,15 @@ func (h *Handler) GetUserCount(c echo.Context) error {
 	return responseJSON(c, http.StatusOK, userCountData{Count: count})
 }
 
-// @Summary      Show a user info
-// @Description  name으로 User의 score와 rank를 얻습니다.
-// @Tags         Users
-// @Produce      json
-// @Param        name   query   string  true  "User name"
-// @Success      200  {object}  leaderboard.UserRank
-// @Failure      400  {object}  messageData "name query param 확인 필요"
-// @Failure      500  {object}  messageData "서버에러"
-// @Router       /users [get]
+// @Summary     Show a user info
+// @Description name으로 User의 score와 rank를 얻습니다.
+// @Tags        Users
+// @Produce     json
+// @Param       name query    string true "User name"
+// @Success     200  {object} leaderboard.UserRank
+// @Failure     400  {object} messageData "name query param 확인 필요"
+// @Failure     500  {object} messageData "서버에러"
+// @Router      /users [get]
 func (h *Handler) GetUser(c echo.Context) error {
 	ctx := context.Background()
 	userName := c.QueryParam("name")
@@ -98,16 +98,16 @@ func (h *Handler) GetUser(c echo.Context) error {
 	return responseJSON(c, http.StatusOK, user)
 }
 
-// @Summary      Add a user
-// @Description  신규 user를 추가합니다.
-// @Tags         Users
-// @accept		 json
-// @Produce      json
-// @Param        user   body    leaderboard.User  true  "New User"
-// @Success      201  {object}  leaderboard.UserRank
-// @Failure      400  {object}  messageData "request body 확인 필요"
-// @Failure      500  {object}  messageData "서버에러"
-// @Router       /users [post]
+// @Summary     Add a user
+// @Description 신규 user를 추가합니다.
+// @Tags        Users
+// @accept      json
+// @Produce     json
+// @Param       user body     leaderboard.User true "New User"
+// @Success     201  {object} leaderboard.UserRank
+// @Failure     400  {object} messageData "request body 확인 필요"
+// @Failure     500  {object} messageData "서버에러"
+// @Router      /users [post]
 func (h *Handler) AddUser(c echo.Context) error {
 	ctx := context.Background()
 	user := leaderboard.User{}
@@ -124,15 +124,15 @@ func (h *Handler) AddUser(c echo.Context) error {
 	return responseJSON(c, http.StatusCreated, userRank)
 }
 
-// @Summary      Delete a user
-// @Description  기존 user를 삭제합니다.
-// @Tags         Users
-// @Produce      json
-// @Param        name   query   string  true  "User name"
-// @Success      200  {object}  deleteData
-// @Failure      400  {object}  messageData "name 확인 필요"
-// @Failure      500  {object}  messageData "서버에러"
-// @Router       /users [delete]
+// @Summary     Delete a user
+// @Description 기존 user를 삭제합니다.
+// @Tags        Users
+// @Produce     json
+// @Param       name query    string true "User name"
+// @Success     200  {object} deleteData
+// @Failure     400  {object} messageData "name 확인 필요"
+// @Failure     500  {object} messageData "서버에러"
+// @Router      /users [delete]
 func (h *Handler) DeleteUser(c echo.Context) error {
 	ctx := context.Background()
 	userName := c.QueryParam("name")
@@ -149,16 +149,16 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 	})
 }
 
-// @Summary      Update a user
-// @Description  기존 user를 수정합니다.
-// @Tags         Users
-// @accept		 json
-// @Produce      json
-// @Param        user   body    leaderboard.User  true  "Updated User"
-// @Success      200  {object}  leaderboard.UserRank
-// @Failure      400  {object}  messageData "request body 확인 필요"
-// @Failure      500  {object}  messageData "서버에러"
-// @Router       /users [patch]
+// @Summary     Update a user
+// @Description 기존 user를 수정합니다.
+// @Tags        Users
+// @accept      json
+// @Produce     json
+// @Param       user body     leaderboard.User true "Updated User"
+// @Success     200  {object} leaderboard.UserRank
+// @Failure     400  {object} messageData "request body 확인 필요"
+// @Failure     500  {object} messageData "서버에러"
+// @Router      /users [patch]
 func (h *Handler) UpdateUser(c echo.Context) error {
 	ctx := context.Background()
 	user := leaderboard.User{}
@@ -175,16 +175,16 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	return responseJSON(c, http.StatusOK, userRank)
 }
 
-// @Summary      Get user list
-// @Description  user list 를 받아옵니다.
-// @Tags         Users
-// @Produce      json
-// @Param        start   path    int  true  "start index"
-// @Param        stop    path    int  true  "stop index"
-// @Success      200  {array}  leaderboard.UserRank
-// @Failure      400  {object}  messageData "param 확인 필요"
-// @Failure      500  {object}  messageData "서버에러"
-// @Router       /users/:start/to/:stop [get]
+// @Summary     Get user list
+// @Description user list 를 받아옵니다.
+// @Tags        Users
+// @Produce     json
+// @Param       start path     int true "start index"
+// @Param       stop  path     int true "stop index"
+// @Success     200   {array}  leaderboard.UserRank
+// @Failure     400   {object} messageData "param 확인 필요"
+// @Failure     500   {object} messageData "서버에러"
+// @Router      /users/{start}/to/{stop} [get]
 func (h *Handler) GetUserList(c echo.Context) error {
 	ctx := context.Background()
 	start, err := strconv.ParseInt(c.Param("start"), 0, 64)
