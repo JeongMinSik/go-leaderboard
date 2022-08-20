@@ -11,6 +11,7 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
       - 6025:6025
+    restart: on-failure
   redis:
     image: redis:alpine
     ports:
