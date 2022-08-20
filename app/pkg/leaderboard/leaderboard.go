@@ -88,7 +88,7 @@ func (lb *LeaderBoard) UpdateUser(ctx context.Context, user User) error {
 func (lb *LeaderBoard) GetUserList(ctx context.Context, start int64, stop int64) ([]User, error) {
 	userList, err := lb.redisStorage.Range(ctx, start, stop)
 	if err != nil {
-		return nil, ErrorWithStatusCode(errors.Wrap(err, "lb.redisStorage.Range"), http.StatusBadRequest)
+		return nil, errors.Wrap(err, "lb.redisStorage.Range")
 	}
 	result := make([]User, 0, len(userList))
 	for _, user := range userList {

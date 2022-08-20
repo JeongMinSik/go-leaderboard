@@ -27,7 +27,7 @@ func TestErrorWithStatusCode(t *testing.T) {
 		Error() string
 		Unwrap() error
 	}
-	if assert.Equal(t, true, errors.As(err, &apiErr)) {
+	if assert.ErrorAs(t, err, &apiErr) {
 		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode())
 		assert.Equal(t, "test error", apiErr.Error())
 		assert.Equal(t, origin, apiErr.Unwrap())
@@ -99,6 +99,14 @@ func TestGetUser(t *testing.T) {
 		}, *userRank)
 	}
 
+	mock.ExpectTxPipeline()
+	mock.ExpectZScore(ZSetKeyName, "Foo").RedisNil()
+	_, err = lb.GetUser(ctx, "Foo")
+	var apiErr interface{ StatusCode() int }
+	if assert.ErrorAs(t, err, &apiErr) {
+		assert.Equal(t, http.StatusNotFound, apiErr.StatusCode())
+	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Error(err)
 	}
@@ -142,6 +150,21 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
+
+	mock.ExpectZAddXX(ZSetKeyName, &redis.Z{
+		Score:  200,
+		Member: "Foo",
+	}).SetVal(0)
+
+	err = lb.UpdateUser(ctx, User{
+		Name:  "Foo",
+		Score: 200,
+	})
+
+	var apiErr interface{ StatusCode() int }
+	if assert.True(t, errors.As(err, &apiErr)) {
+		assert.Equal(t, http.StatusNotFound, apiErr.StatusCode())
+	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Error(err)
@@ -191,6 +214,10 @@ func TestUserList(t *testing.T) {
 			assert.Equal(t, expected[i], user)
 		}
 	}
+
+	mock.ExpectZRangeWithScores(ZSetKeyName, 0, 1).SetErr(redis.ErrClosed)
+	_, err = lb.GetUserList(ctx, 0, 1)
+	assert.Error(t, err, redis.ErrClosed)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Error(err)
