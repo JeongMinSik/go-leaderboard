@@ -21,23 +21,23 @@ import (
 // @host localhost:6025
 func main() {
 	e := echo.New()
-	SetupLogger(e)
+	setupLogger(e)
 	lb, err := leaderboard.New()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	SetupHandler(e, lb)
+	setupHandler(e, lb)
 	e.Logger.Fatal(e.Start(":6025"))
 }
 
-func SetupLogger(e *echo.Echo) {
+func setupLogger(e *echo.Echo) {
 	log := logger.New()
 	if err := log.AddElasticHook(e, "api-log"); err != nil {
 		log.Panic(err)
 	}
 }
 
-func SetupHandler(e *echo.Echo, lb leaderboard.Interface) {
+func setupHandler(e *echo.Echo, lb leaderboard.Interface) {
 	hdler := handler.Handler{
 		Leaderboard: lb,
 	}
